@@ -107,6 +107,11 @@ textarea.inp{height:auto;padding:10px 12px;line-height:1.5;resize:vertical}
 .tbl tr:last-child td{border-bottom:0}
 .tbl .r{text-align:right}
 .tbl tr.click{cursor:pointer}.tbl tr.click:hover td{background:var(--chip)}
+/* tbl-tight — delivery register / lifting breakup tables: keep every cell on one line (numbers+unit, vehicle
+   plates, dates) and let the .scroll wrapper handle overflow, instead of ugly mid-value wraps. Cells that
+   genuinely carry a sentence (assay readout, reroute note) opt back into wrapping via .wrap. */
+.tbl-tight td{white-space:nowrap}
+.tbl-tight td.wrap{white-space:normal}
 .scroll{overflow-x:auto}
 .prog{position:relative;height:10px;background:var(--chip);border-radius:999px;overflow:hidden;min-width:120px}
 .prog span{position:absolute;left:0;top:0;bottom:0}
@@ -469,13 +474,16 @@ const S = {
     {id: "P-125", kind: "purchase", party: "M4", product: "Fines 60.5%", item: "IT-6", qty: 10000, rate: 2700, matches: [], status: "Unmatched", sc: "b", bookedAt: "2026-09-19"},
     {id: "P-128", kind: "purchase", party: "M1", product: "CLO 18–40 mm", item: "IT-5", qty: 8000, rate: 4600, matches: [{id: "S-2041", qty: 5000}], status: "Partially matched", sc: "w", bookedAt: "2026-09-08"},
     {id: "P-131", kind: "purchase", party: "M3", product: "CLO 10–30 mm", item: "IT-7", qty: 7000, rate: 4250, matches: [{id: "S-2042", qty: 7000}], status: "Loading", sc: "g", bookedAt: "2026-08-28"},
-    {id: "P-134", kind: "purchase", party: "M2", product: "CLO 10–30 mm", item: "IT-4", qty: 5000, rate: 4300, matches: [{id: "S-2043", qty: 2000}], status: "Partially matched", sc: "w", bookedAt: "2026-09-12"},
+    /* P-134 is split across two sale orders (item 4 — a PO can be linked to several SOs): 2,000 t to S-2043 and
+       3,000 t to S-2048, together accounting for the full 5,000 t bought. */
+    {id: "P-134", kind: "purchase", party: "M2", product: "CLO 10–30 mm", item: "IT-4", qty: 5000, rate: 4300, matches: [{id: "S-2043", qty: 2000}, {id: "S-2048", qty: 3000}], status: "Loading", sc: "g", bookedAt: "2026-09-12"},
     {id: "P-137", kind: "purchase", party: "M1", product: "CLO 10–30 mm", item: "IT-1", qty: 3500, rate: 4700, matches: [], status: "Cancelled", sc: "n", bookedAt: "2026-08-10", note: "Cancelled — mine could not clear lease renewal in time"},
     {id: "S-2040", kind: "sale", party: "P5", product: "Fines 60.5%", item: "IT-6", qty: 10000, rate: 2900, sched: "FINES", matches: [{id: "P-125", qty: 10000}], disp: 0, recv: 0, setl: 0, est: {purchase: 2700, freight: 210, ded: 20, fin: 8}, real: 0, status: "Booked, dispatch not started", sc: "n", from: "2026-09-20", to: "2026-11-15", weight: "Plant weighbridge", assay: "Plant lab"},
     {id: "S-2041", kind: "sale", party: "P6", product: "CLO 18–40 mm", item: "IT-5", qty: 5000, rate: 5100, sched: "CLO", matches: [{id: "P-128", qty: 5000}], disp: 0, recv: 0, setl: 0, est: {purchase: 4600, freight: 480, ded: 40, fin: 15}, real: 0, status: "Booked, dispatch not started", sc: "n", from: "2026-09-22", to: "2026-10-30", weight: "Plant weighbridge", assay: "Third party at unloading"},
     {id: "S-2042", kind: "sale", party: "P3", product: "CLO 10–30 mm", item: "IT-7", qty: 7000, rate: 4850, sched: "CLO", matches: [{id: "P-131", qty: 7000}], disp: 40, recv: 20, setl: 0, est: {purchase: 4250, freight: 500, ded: 45, fin: 18}, real: 65, status: "Dispatch in progress", sc: "w", from: "2026-08-30", to: "2026-10-05", weight: "Plant weighbridge", assay: "Plant lab"},
     {id: "S-2043", kind: "sale", party: "P4", product: "CLO 10–30 mm", item: "IT-4", qty: 2000, rate: 4800, sched: "CLO", matches: [{id: "P-134", qty: 2000}], disp: 0, recv: 0, setl: 0, est: {purchase: 4300, freight: 490, ded: 40, fin: 16}, real: 0, status: "Awaiting dispatch", sc: "n", from: "2026-09-13", to: "2026-10-20", weight: "Plant weighbridge", assay: "Plant lab"},
     {id: "S-2047", kind: "sale", party: "P2", product: "Fines 60.5%", item: "IT-6", qty: 4000, rate: 2950, sched: "FINES", matches: [], disp: 0, recv: 0, setl: 0, est: {purchase: 0, freight: 0, ded: 0, fin: 0}, real: 0, status: "Sold short — no purchase booked yet", sc: "b", from: "2026-09-21", to: "2026-11-01", weight: "Plant weighbridge", assay: "Plant lab"},
+    {id: "S-2048", kind: "sale", party: "P6", product: "CLO 10–30 mm", item: "IT-4", qty: 3000, rate: 4750, sched: "CLO", matches: [{id: "P-134", qty: 3000}], disp: 0, recv: 0, setl: 0, est: {purchase: 4300, freight: 470, ded: 38, fin: 15}, real: 0, status: "Awaiting dispatch", sc: "n", from: "2026-09-14", to: "2026-10-22", weight: "Plant weighbridge", assay: "Plant lab"},
     {id: "E-0412", kind: "export", party: "B1", product: "Fines 56.5% Fe", qty: 55000, rate: 0, status: "Loading ready", sc: "g", usdPerT: 6.1},
     {id: "E-0430", kind: "export", party: "B2", product: "Fines 58% Fe", qty: 40000, rate: 0, status: "Sourcing", sc: "n", usdPerT: 6.4}
   ],
@@ -576,16 +584,19 @@ const S = {
     {id: "PL-03", plot: "Paradip plot 9", contract: "E-0412", wmt: 8200, feDry: 55.8, feAR: 53.4, moist: 4.3},
     {id: "PL-07", plot: "Paradip plot 9", contract: "E-0412", wmt: 6300, feDry: 58.2, feAR: 55.7, moist: 4.3, hold: true}
   ],
-  /* export desk: physical custody trail for material procured against an export sauda — mine → warehouse/port → vessel (item 7) */
+  /* export desk: physical custody trail for material procured against an export sauda — mine → warehouse/port → vessel (item 7).
+     `fe` is the mine-side lab Fe% on the lot booked in by that movement — only present on first-leg (mine → warehouse/port)
+     movements, since that's the only point a fresh assay is drawn; onward relocations (warehouse → transit) just move the
+     same already-assayed tonnage and must NOT be re-counted when working out how much has actually been sourced from each mine. */
   movements: [
-    {id: "MV-01", contract: "E-0412", date: "2026-08-22", qty: 18400, from: "M1", to: "Paradip port · plot 14", mode: "Rail", note: "Booked in as lot PL-01"},
-    {id: "MV-02", contract: "E-0412", date: "2026-08-27", qty: 14600, from: "M1", to: "Paradip port · plot 14", mode: "Rail", note: "Booked in as lot PL-02"},
-    {id: "MV-03", contract: "E-0412", date: "2026-09-02", qty: 8200, from: "M3", to: "Paradip port · plot 9", mode: "Road + rail", note: "Booked in as lot PL-03"},
-    {id: "MV-04", contract: "E-0412", date: "2026-09-09", qty: 6300, from: "M3", to: "Paradip port · plot 9", mode: "Road + rail", note: "Booked in as lot PL-07 · held, Fe near duty threshold"},
-    {id: "MV-05", contract: "E-0412", date: "2026-09-14", qty: 4500, from: "M3", to: "Barbil warehouse", mode: "Road", note: "Awaiting a rail rake to Paradip"},
+    {id: "MV-01", contract: "E-0412", date: "2026-08-22", qty: 18400, from: "M1", to: "Paradip port · plot 14", mode: "Rail", note: "Booked in as lot PL-01", fe: 56.8},
+    {id: "MV-02", contract: "E-0412", date: "2026-08-27", qty: 14600, from: "M1", to: "Paradip port · plot 14", mode: "Rail", note: "Booked in as lot PL-02", fe: 56.3},
+    {id: "MV-03", contract: "E-0412", date: "2026-09-02", qty: 8200, from: "M3", to: "Paradip port · plot 9", mode: "Road + rail", note: "Booked in as lot PL-03", fe: 55.4},
+    {id: "MV-04", contract: "E-0412", date: "2026-09-09", qty: 6300, from: "M3", to: "Paradip port · plot 9", mode: "Road + rail", note: "Booked in as lot PL-07 · held, Fe near duty threshold", fe: 58.2},
+    {id: "MV-05", contract: "E-0412", date: "2026-09-14", qty: 4500, from: "M3", to: "Barbil warehouse", mode: "Road", note: "Awaiting a rail rake to Paradip", fe: 55.7},
     {id: "MV-06", contract: "E-0412", date: "2026-09-18", qty: 2000, from: "Barbil warehouse", to: "In transit to Paradip (rail)", mode: "Rail", note: "ETA 2 days"},
-    {id: "MV-07", contract: "E-0430", date: "2026-09-17", qty: 6000, from: "M4", to: "Barbil warehouse", mode: "Road", note: "First lot booked in — sourcing just started"},
-    {id: "MV-08", contract: "E-0430", date: "2026-09-20", qty: 4200, from: "M4", to: "Barbil warehouse", mode: "Road", note: "Second lot booked in"}
+    {id: "MV-07", contract: "E-0430", date: "2026-09-17", qty: 6000, from: "M4", to: "Barbil warehouse", mode: "Road", note: "First lot booked in — sourcing just started", fe: 59.1},
+    {id: "MV-08", contract: "E-0430", date: "2026-09-20", qty: 4200, from: "M4", to: "Barbil warehouse", mode: "Road", note: "Second lot booked in", fe: 58.6}
   ],
   /* mark-to-market rate the desk keys in per category, for the Position P&L table — today vs yesterday drives Today's P/L and its delta */
   mtm: {
@@ -725,16 +736,29 @@ const permitBlocker = pm => {
   if (!bad) return null;
   return {stage: bad[1], text: bad[1] + " " + permitStageLabel((pm[bad[0]] || {}).status).toLowerCase() + " on " + pm.id + " (" + pm.po + ") — trucks under this lift can't move until it clears."};
 };
+/* item 5: a PO's total contracted quantity (e.g. 45,000 t) is dispatched against a sequence of much smaller
+   Form L lifts (e.g. 10,000 t each) approved one at a time — so "how much is left to dispatch" is really a
+   per-Form-L question, not just a PO-level one. permitLifted sums the trucks actually tied (via t.permit) to
+   one lift; permitBalance is what that lift still has room for. */
+const permitLifted = pm => S.trips.filter(t => t.permit === pm.id).reduce((a, t) => a + t.mineNet, 0);
+const permitBalance = pm => Math.max(0, pm.formL.qty - permitLifted(pm));
 function permitChainCard(p) {
   const lifts = permitsFor(p.id);
   if (!lifts.length) return "";
+  const poLiftedTotal = lifts.reduce((a, pm) => a + permitLifted(pm), 0);
+  const poLiftQtyTotal = lifts.reduce((a, pm) => a + pm.formL.qty, 0);
   const rows = lifts.map(pm => {
     const blk = permitBlocker(pm);
+    const lifted = permitLifted(pm), pct = pm.formL.qty ? Math.min(100, Math.round(lifted / pm.formL.qty * 100)) : 0;
+    const over = lifted > pm.formL.qty + 0.01;
     const trk = PERMIT_STAGES.map(([k, label]) => '<span class="pill ' + permitStageCls((pm[k] || {}).status) + '" title="' + label + '">' + label + (pm[k] && pm[k].no ? " · " + pm[k].no.split("/").slice(-1)[0] : "") + "</span>").join('<span class="faint" style="margin:0 2px">→</span>');
     return '<div style="padding:10px 0;border-top:1px solid var(--line)"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;align-items:center"><b>' + pm.id + '</b><span class="muted">' + num(pm.formL.qty, 0) + " t lift · " + PARTY[pm.mine].name + (pm.formK && pm.formK.fe != null ? " · Form K Fe " + pm.formK.fe + "%" : "") + '</span></div><div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;align-items:center">' + trk + "</div>" +
+      '<div style="margin-top:8px;display:flex;align-items:center;gap:10px"><div class="prog" style="flex:1;max-width:260px"><span style="width:' + pct + '%;background:' + (over ? "var(--bad)" : "var(--bar2)") + '"></span></div><span class="mono faint" style="font-size:12px">' + num(lifted, 0) + " of " + num(pm.formL.qty, 0) + " t lifted" + (over ? " · over by " + num(lifted - pm.formL.qty, 0) + " t" : "") + "</span></div>" +
+      (over ? '<div class="faint" style="color:var(--bad);margin-top:4px">This lift has been dispatched beyond its Form L approved quantity — check with the mine before any more trucks move under ' + pm.id + '.</div>' : "") +
       (blk ? '<div class="faint" style="color:var(--bad);margin-top:6px">' + blk.text + "</div>" : "") + "</div>";
   }).join("");
-  return '<section class="card" style="margin-top:16px"><div class="chead"><h2>Permit &amp; dispatch chain</h2><span class="muted">Form H → Form I → Form L lift → Transport Permit → Form K (govt lab)</span></div>' + rows +
+  return '<section class="card" style="margin-top:16px"><div class="chead"><h2>Permit &amp; dispatch chain</h2><span class="muted">Form H → Form I → Form L lift → Transport Permit → Form K (govt lab)</span></div>' +
+    '<div class="muted" style="margin-bottom:4px">' + num(poLiftedTotal, 0) + " t lifted across " + lifts.length + " Form L lift(s) totalling " + num(poLiftQtyTotal, 0) + " t approved so far" + (p.qty > poLiftQtyTotal ? " — " + num(p.qty - poLiftQtyTotal, 0) + " t of the " + num(p.qty, 0) + " t PO still needs a Form L applied for" : "") + '</div>' + rows +
     '<div style="margin-top:10px"><button class="btn s" data-act="impi3ms" data-id="' + p.id + '">Paste i3MS dispatch report</button></div></section>';
 }
 /* ---------- Fe% commitment (PRD-style ask: sale orders are booked on a contracted Fe basis; if the average
@@ -752,8 +776,30 @@ function feCommitment(s) {
 }
 const nextOrderId = kind => { const pre = kind === "purchase" ? "P" : "S"; const nums = S.saudas.filter(x => x.kind === kind).map(x => +x.id.slice(2)).filter(n => !isNaN(n)); return pre + "-" + (Math.max(2000, ...nums) + 1); };
 const estMargin = s => s.rate - s.est.purchase - s.est.freight - s.est.ded - s.est.fin;
-/* per-delivery booked P&L — one truck's worth of the sale order's margin, using the actual matched purchase rate and the
-   actual assay deduction where the plant has reported one, plus the same per-tonne finance cost already priced into est.fin */
+const shortPct = t => t.plantNet ? r4((t.mineNet - t.plantNet) / t.mineNet * 100) : null;
+/* ---------- shortage resolution (item 1) ----------
+   The mine bills on its own load-point weight (mineNet); the buyer only pays on what's actually delivered
+   (plantNet). Any gap between the two is real money at stake — until it's resolved, it's assumed to sit as
+   our loss (the conservative default). The desk can allocate the gap across the three usual outcomes —
+   accepted by the seller (reduces our cost, as if billed on the lower weight), deducted from the transporter
+   (recovered as a claim), or borne by us (stays a loss) — split any way, as a tonnage or a flat lumpsum, and
+   a single shortage can be split across all three at once. */
+const shortTons = t => t.plantNet != null ? r4(Math.max(0, t.mineNet - t.plantNet)) : 0;
+const shortResEntries = t => (t.shortRes && t.shortRes.entries) || [];
+function shortResImpact(t, buyRate) {
+  const total = shortTons(t);
+  if (!total) return null;
+  const entries = shortResEntries(t);
+  const amt = e => e.mode === "lumpsum" ? (+e.amount || 0) : (+e.qty || 0) * buyRate;
+  const by = party => entries.filter(e => e.party === party).reduce((a, e) => a + amt(e), 0);
+  const seller = by("seller"), transporter = by("transporter"), us = by("us");
+  const allocTons = entries.reduce((a, e) => a + (e.mode === "lumpsum" ? 0 : (+e.qty || 0)), 0);
+  const fullLoss = r4(total * buyRate), recovered = seller + transporter;
+  return {total, fullLoss, seller, transporter, us, recovered, netLossToUs: Math.max(0, fullLoss - recovered), allocTons, resolved: entries.length > 0, fullyAllocated: entries.length > 0 && r4(allocTons) >= total - 0.01};
+}
+/* per-delivery booked P&L — one truck's worth of the sale order's margin, using the actual matched purchase rate,
+   the actual assay deduction where the plant has reported one, and the mine-billed (not delivered) quantity as
+   the purchase cost basis — net of whatever shortage has actually been recovered from the seller or transporter. */
 function perDeliveryPL(t) {
   const s = so(t.sauda);
   if (!s || !s.est) return null;
@@ -762,11 +808,21 @@ function perDeliveryPL(t) {
   if (!buy) return null;
   const qty = t.plantNet || t.mineNet;
   const ded = t.a ? settle(s.sched, t.a, qty, s.rate).ded : qty * s.est.ded;
-  const revenue = qty * s.rate, cost = qty * buy.rate, freight = qty * s.est.freight, interest = qty * s.est.fin;
+  const sr = shortResImpact(t, buy.rate);
+  const revenue = qty * s.rate;
+  const cost = t.mineNet * buy.rate - (sr ? sr.recovered : 0);
+  const freight = qty * s.est.freight, interest = qty * s.est.fin;
   const pl = revenue - cost - freight - ded - interest;
-  return {qty, buyRate: buy.rate, revenue, cost, freight, ded, interest, pl, perT: pl / qty};
+  return {qty, buyRate: buy.rate, revenue, cost, freight, ded, interest, pl, perT: pl / qty, short: sr};
 }
-const shortPct = t => t.plantNet ? r4((t.mineNet - t.plantNet) / t.mineNet * 100) : null;
+/* booked (estimate) P&L for the same truck — the standard terms the order was quoted on, ignoring this specific
+   truck's actual shortage/assay outcome. The gap between this and perDeliveryPL is exactly what the desk is
+   managing day to day. */
+function bookedDeliveryPL(t) {
+  const s = so(t.sauda); if (!s || !s.est) return null;
+  const em = estMargin(s);
+  return {pl: em * t.mineNet, perT: em};
+}
 const tripFlag = t => {
   if (t.blocker) return {k: {payment_shortfall: "Payment blocked", truck_unavailable: "No trucks", loading_unavailable: "Loading stalled"}[t.blocker.type] || "Blocked", c: "b", why: t.blocker.text};
   if (t.status === "in_transit" && t.hrs > 8) return {k: "Delayed", c: "w", why: "In transit " + Math.floor(t.hrs) + " h " + Math.round((t.hrs % 1) * 60) + " m"};
@@ -1035,17 +1091,37 @@ function invoiceTable(list) {
 function liftingTable(trips, order) {
   const rakeOn = order && S.rake.sauda && (order.id === S.rake.sauda || orderMatches(order).some(m => m.id === S.rake.sauda));
   if (!trips.length && !rakeOn) return '<p class="muted">No lifting recorded yet.</p>';
+  const money = canMoney();
   const rows = trips.map(t => {
     const s = sauda(t.sauda), sp = shortPct(t), f = tripFlag(t);
     const res = t.a ? settle(s.sched, t.a, t.plantNet || t.mineNet, s.rate) : null;
     const inv = S.invoices.find(i => i.trip === t.id);
-    return '<tr class="click" data-go="#/trip/' + t.id + '"><td class="mono">' + t.loaded + '</td><td class="mono">' + t.veh + '</td><td class="r mono">' + num(t.mineNet) + ' t</td><td>' + pn(t.plant) + (t.rerouted ? '<div class="faint">Rerouted → ' + pn(t.rerouted.to) + '</div>' : "") + '</td><td>' + (t.plantNet ? num(t.plantNet) + " t" : '<span class="faint">pending</span>') + '</td><td>' + (t.a ? Object.keys(t.a).map(k => k + " " + t.a[k] + "%").join(", ") : '<span class="faint">pending</span>') + '</td><td class="r mono" style="color:' + (sp > 0.75 ? "var(--bad)" : "inherit") + '">' + (sp != null ? sp.toFixed(2) + "%" : "—") + '</td><td>' + (res && res.rejected ? '<span class="pill b">Rejected</span>' : f ? '<span class="pill ' + f.c + '">' + f.k + "</span>" : res ? '<span class="pill g">Settled</span>' : '<span class="pill n">Pending</span>') + '</td><td>' + (inv ? '<span class="pill n">' + inv.id + "</span>" : '<span class="faint">—</span>') + "</td></tr>";
+    const pl = money ? perDeliveryPL(t) : null;
+    const bk = money ? bookedDeliveryPL(t) : null;
+    const m0 = orderMatches(s)[0]; const buy = m0 && po(m0.id);
+    const sr = buy ? shortResImpact(t, buy.rate) : null;
+    let resPill;
+    if (res && res.rejected) resPill = '<span class="pill b">Rejected</span>';
+    else if (sr && sr.total) resPill = !sr.resolved ? '<span class="pill b">Unresolved</span>' : !sr.fullyAllocated ? '<span class="pill w">Partial</span>' : '<span class="pill g">Allocated</span>';
+    else if (f) resPill = '<span class="pill ' + f.c + '">' + f.k + "</span>";
+    else resPill = res ? '<span class="pill g">Settled</span>' : '<span class="pill n">Pending</span>';
+    if (sr && sr.total && !sr.fullyAllocated) resPill += ' <button class="btn s" style="height:24px;padding:0 8px;font-size:11px" data-act="resolveshort" data-id="' + t.id + '">Resolve</button>';
+    return '<tr class="click" data-go="#/trip/' + t.id + '"><td class="mono">' + t.loaded + '</td><td class="mono">' + t.veh + '</td><td class="r mono">' + num(t.mineNet) + ' t</td><td class="wrap">' + pn(t.plant) + (t.rerouted ? '<div class="faint">Rerouted → ' + pn(t.rerouted.to) + '</div>' : "") + '</td><td>' + (t.plantNet ? num(t.plantNet) + " t" : '<span class="faint">pending</span>') + '</td><td class="wrap">' + (t.a ? Object.keys(t.a).map(k => k + " " + t.a[k] + "%").join(", ") : '<span class="faint">pending</span>') + '</td><td class="r mono" style="color:' + (sp > 0.75 ? "var(--bad)" : "inherit") + '">' + (sp != null ? num(shortTons(t), 2) + " t · " + sp.toFixed(2) + "%" : "—") + '</td><td class="wrap">' + resPill + "</td>" +
+      (money ? '<td class="r mono" style="white-space:nowrap"><span class="faint">' + (bk ? inr(bk.pl) : "—") + '</span> → <span style="font-weight:600;color:' + (pl ? (pl.pl >= 0 ? "var(--good)" : "var(--bad)") : "inherit") + '">' + (pl ? inr(pl.pl) : '<span class="faint">—</span>') + "</span></td>" : "") +
+      '<td>' + (inv ? '<span class="pill n">' + inv.id + "</span>" : '<span class="faint">—</span>') + "</td></tr>";
   }).join("");
   const rakeRow = rakeOn ? (() => {
     const r = S.rake, rs = sauda(r.sauda);
-    return '<tr><td class="mono">Rake · ' + r.id + '</td><td class="mono">' + r.rr + '</td><td class="r mono">' + num(r.qty) + ' t</td><td>' + pn(rs.party) + '</td><td>' + num(r.qty) + ' t</td><td>' + Object.keys(r.plantA).map(k => k + " " + r.plantA[k] + "%").join(", ") + '</td><td class="r mono">' + fx(r4(r.load.fe - r.plantA.fe)) + '% Fe</td><td>' + (r.dispute === "accepted" ? '<span class="pill g">Settled</span>' : '<span class="pill w">Disputed</span>') + '</td><td class="faint">DN ' + r.dn.no + "</td></tr>";
+    return '<tr><td class="mono">Rake · ' + r.id + '</td><td class="mono">' + r.rr + '</td><td class="r mono">' + num(r.qty) + ' t</td><td>' + pn(rs.party) + '</td><td>' + num(r.qty) + ' t</td><td class="wrap">' + Object.keys(r.plantA).map(k => k + " " + r.plantA[k] + "%").join(", ") + '</td><td class="r mono">' + fx(r4(r.load.fe - r.plantA.fe)) + '% Fe</td><td class="wrap">' + (r.dispute === "accepted" ? '<span class="pill g">Settled</span>' : '<span class="pill w">Disputed</span>') + "</td>" + (money ? '<td class="r mono faint">—</td>' : "") + '<td class="faint">DN ' + r.dn.no + "</td></tr>";
   })() : "";
-  return '<table class="tbl"><thead><tr><th>Loaded</th><th>Vehicle / rake</th><th class="r">Sent qty</th><th>Sent to</th><th>Unloaded</th><th>Assay</th><th class="r">Deviance</th><th>Resolution</th><th>Invoice</th></tr></thead><tbody>' + rows + rakeRow + "</tbody></table>";
+  let footer = "";
+  if (money && trips.length) {
+    const bkTotal = trips.reduce((a, t) => a + (bookedDeliveryPL(t) ? bookedDeliveryPL(t).pl : 0), 0);
+    const plTotal = trips.reduce((a, t) => { const p = perDeliveryPL(t); return a + (p ? p.pl : 0); }, 0);
+    const nPriced = trips.filter(t => perDeliveryPL(t)).length;
+    footer = '<tfoot><tr style="font-weight:600;border-top:2px solid var(--line)"><td colspan="7">Overall · ' + trips.length + ' truck(s)' + (nPriced < trips.length ? ' · ' + (trips.length - nPriced) + " not yet priceable" : "") + '</td><td></td><td class="r mono" style="white-space:nowrap">' + inr(bkTotal) + ' → <span style="color:' + plColor(plTotal) + '">' + inr(plTotal) + '</span></td><td></td></tr></tfoot>';
+  }
+  return '<table class="tbl tbl-tight"><thead><tr><th>Loaded</th><th>Vehicle / rake</th><th class="r">Sent qty</th><th>Sent to</th><th>Unloaded</th><th>Assay</th><th class="r">Deviance</th><th>Resolution</th>' + (money ? '<th class="r">Margin <span class="faint">(booked → actual)</span></th>' : "") + '<th>Invoice</th></tr></thead><tbody>' + rows + rakeRow + "</tbody>" + footer + "</table>";
 }
 function attachControl(rec) {
   const other = rec.kind === "purchase" ? "sale" : "purchase";
@@ -1094,7 +1170,7 @@ function vPurchaseDetail(p) {
     "<tr><td>Item</td><td>" + itemLabel(it) + "</td></tr>" +
     '<tr><td>Rate</td><td class="mono">' + M("₹" + num(p.rate, 0) + "/t ex-mine") + "</td></tr>" +
     '<tr><td>Lifted so far</td><td class="mono">' + num(lifted, 0) + " t <span class=\"faint\">of " + num(p.qty, 0) + " t · balance " + num(bal, 0) + " t</span></td></tr>" +
-    "<tr><td>Linked sale order</td><td>" + attachControl(p) + "</td></tr>" +
+    "<tr><td>Linked sale order(s)</td><td>" + attachControl(p) + "</td></tr>" +
     (p.advance ? '<tr><td>Advance</td><td class="mono">' + M(short(p.advance)) + "</td></tr>" : "") +
     '<tr><td>Booked by</td><td>' + byLine(p, "by", "") + "</td></tr>" +
     "</tbody></table></section>" +
@@ -1135,7 +1211,7 @@ function vSaleDetail(s) {
   return '<a href="#/sale" style="font-size:13px">‹ Sale orders</a>' + head(s.id + " · " + pn(s.party), itemLabel(it) + " · " + num(s.qty, 0) + " t · delivery " + fdate(s.from) + " to " + fdate(s.to), '<div style="display:flex;gap:8px"><a class="btn" href="#/settle" data-act="labsauda" data-id="' + s.id + '">Test an assay</a><span class="pill ' + s.sc + '" style="align-self:center">' + s.status + "</span></div>") +
     '<section class="card"><div class="stats"><div class="stat"><span class="k">Delivered</span><span class="v">' + num(delivered, 0) + ' t</span></div><div class="stat"><span class="k">Balance to deliver</span><span class="v">' + num(bal, 0) + ' t</span></div><div class="stat"><span class="k">Base rate</span><span class="v">' + M("₹" + num(s.rate, 0) + "/t") + '</span></div><div class="stat"><span class="k">True margin est → realised</span><span class="v">' + M("₹" + em + " → ₹" + s.real) + '</span></div><div class="stat"><span class="k">Est. outstanding</span><span class="v">' + M(short(estOutstanding(s))) + '</span></div></div><div class="prog" style="margin-top:6px"><span style="width:' + s.disp + '%;background:var(--bar1)"></span><span style="width:' + s.recv + '%;background:var(--bar2)"></span><span style="width:' + s.setl + '%;background:var(--bar3)"></span></div></section>' +
     feCommitmentCard(s) +
-    '<div class="row"><section class="card c6"><h2>Terms</h2><table class="tbl"><tbody><tr><td>Item</td><td>' + itemLabel(it) + "</td></tr><tr><td>Linked purchase order</td><td>" + attachControl(s) + "</td></tr>" + (s.advance ? "<tr><td>Advance</td><td class=\"mono\">" + M(short(s.advance)) + "</td></tr>" : "") + '<tr><td>Booked by</td><td>' + byLine(s, "by", "") + "</td></tr></tbody></table></section>" +
+    '<div class="row"><section class="card c6"><h2>Terms</h2><table class="tbl"><tbody><tr><td>Item</td><td>' + itemLabel(it) + "</td></tr><tr><td>Linked purchase order(s)</td><td>" + attachControl(s) + "</td></tr>" + (s.advance ? "<tr><td>Advance</td><td class=\"mono\">" + M(short(s.advance)) + "</td></tr>" : "") + '<tr><td>Booked by</td><td>' + byLine(s, "by", "") + "</td></tr></tbody></table></section>" +
     '<section class="card c6"><h2>Penalty schedule</h2><p class="muted" style="margin:0">' + L.name + " · " + L.note + '</p><div class="faint" style="margin-top:8px">Weight: ' + s.weight + " · Assay: " + s.assay + " · Umpire if variance ≥ 0.5% · 90% provisional payment</div></section></div>" +
     '<section class="card c5"><h2>True margin build-up</h2>' + (canMoney() ? '<table class="tbl"><tbody><tr><td>Sale base rate</td><td class="r mono">₹' + num(s.rate, 0) + '</td></tr><tr><td>Purchase (' + (orderMatches(s).map(m => m.id).join(", ") || "—") + ')</td><td class="r mono">−₹' + num(s.est.purchase, 0) + '</td></tr><tr><td>Freight</td><td class="r mono">−₹' + s.est.freight + '</td></tr><tr><td>Expected deduction <span class="faint">(90-day avg, this plant)</span></td><td class="r mono">−₹' + s.est.ded + '</td></tr><tr><td>Finance cost <span class="faint">(12% p.a.)</span></td><td class="r mono">−₹' + s.est.fin + '</td></tr><tr><td style="font-weight:600">True margin <span class="faint">(after freight, deduction &amp; finance)</span></td><td class="r mono" style="font-weight:600">₹' + em + '/t</td></tr><tr><td style="font-weight:600">Realised so far</td><td class="r mono" style="font-weight:600;color:' + (s.real < em ? "var(--bad)" : "var(--good)") + '">₹' + s.real + "/t</td></tr></tbody></table>" : '<div class="muted">Hidden for your role.</div>') + "</section>" +
     '<section class="card" style="margin-top:16px"><div class="chead"><h2>Lifting breakup</h2><span class="faint">Per truck trip / rake against this sale order</span></div><div class="scroll">' + liftingTable(trips, s) + "</div></section>" +
@@ -1420,22 +1496,25 @@ function vPipelineDetail(p) {
 const TST = {loading: ["Loading", "n"], in_transit: ["In transit", "n"], received: ["Received", "g"], settled: ["Settled", "g"], disputed: ["Disputed", "b"]};
 function tripTable(list) {
   if (!list.length) return '<p class="muted">No trips match this filter.</p>';
-  return '<table class="tbl"><thead><tr><th>Trip</th><th>Vehicle</th><th>Route</th><th>Sauda</th><th class="r">Mine net</th><th class="r">Plant net</th><th class="r">Shortage</th><th class="r">Status</th></tr></thead><tbody>' + list.map(t => { const f = tripFlag(t), sp = shortPct(t); return '<tr class="click" data-go="#/trip/' + t.id + '"><td class="mono">' + t.id + (t.isNew ? ' <span class="pill w">New</span>' : "") + '</td><td class="mono">' + t.veh + "</td><td>" + PARTY[t.mine].place + " → " + pn(t.plant) + '</td><td class="mono">' + t.sauda + '</td><td class="r mono">' + num(t.mineNet) + ' t</td><td class="r mono">' + (t.plantNet ? num(t.plantNet) + " t" : "—") + '</td><td class="r mono" style="color:' + (sp > 0.75 ? "var(--bad)" : "inherit") + '">' + (sp != null ? sp.toFixed(2) + "%" : "—") + '</td><td class="r">' + (f ? '<span class="pill ' + f.c + '">' + f.k + "</span>" : '<span class="pill ' + TST[t.status][1] + '">' + TST[t.status][0] + "</span>") + "</td></tr>"; }).join("") + "</tbody></table>";
+  return '<table class="tbl tbl-tight"><thead><tr><th>Trip</th><th>Vehicle</th><th class="wrap">Route</th><th>Sauda</th><th class="r">Mine net</th><th class="r">Plant net</th><th class="r">Shortage</th><th class="r">Status</th></tr></thead><tbody>' + list.map(t => { const f = tripFlag(t), sp = shortPct(t); return '<tr class="click" data-go="#/trip/' + t.id + '"><td class="mono">' + t.id + (t.isNew ? ' <span class="pill w">New</span>' : "") + '</td><td class="mono">' + t.veh + "</td><td class=\"wrap\">" + PARTY[t.mine].place + " → " + pn(t.plant) + '</td><td class="mono">' + t.sauda + '</td><td class="r mono">' + num(t.mineNet) + ' t</td><td class="r mono">' + (t.plantNet ? num(t.plantNet) + " t" : "—") + '</td><td class="r mono" style="color:' + (sp > 0.75 ? "var(--bad)" : "inherit") + '">' + (sp != null ? sp.toFixed(2) + "%" : "—") + '</td><td class="r">' + (f ? '<span class="pill ' + f.c + '">' + f.k + "</span>" : '<span class="pill ' + TST[t.status][1] + '">' + TST[t.status][0] + "</span>") + "</td></tr>"; }).join("") + "</tbody></table>";
 }
 function deliveryRegisterTable(list) {
   if (!list.length) return '<p class="muted">No trips match this filter.</p>';
   const rows = list.map(t => {
-    const p = perDeliveryPL(t), f = tripFlag(t);
+    const p = perDeliveryPL(t), bk = perDeliveryPL(t) && bookedDeliveryPL(t), f = tripFlag(t);
     const statusPill = f ? '<span class="pill ' + f.c + '">' + f.k + "</span>" : '<span class="pill ' + TST[t.status][1] + '">' + TST[t.status][0] + "</span>";
-    return '<tr class="click" data-go="#/trip/' + t.id + '"><td class="mono">' + t.id + (t.isNew ? ' <span class="pill w">New</span>' : "") + '</td><td class="mono">' + t.veh + "</td><td>" + PARTY[t.mine].place + " → " + pn(t.plant) + '</td><td class="mono">' + t.sauda + '</td><td class="r mono">' + num(p ? p.qty : t.mineNet) + " t</td>" +
+    const short = shortTons(t);
+    return '<tr class="click" data-go="#/trip/' + t.id + '"><td class="mono">' + t.id + (t.isNew ? ' <span class="pill w">New</span>' : "") + '</td><td class="mono">' + t.veh + '</td><td class="wrap">' + PARTY[t.mine].place + " → " + pn(t.plant) + '</td><td class="mono">' + t.sauda + '</td><td class="r mono">' + num(p ? p.qty : t.mineNet) + " t</td>" +
+      '<td class="r mono" style="color:' + (short > 0 ? "var(--bad)" : "inherit") + '">' + (short > 0 ? num(short, 2) + " t" : "—") + "</td>" +
       (p ? '<td class="r mono">' + M("₹" + num(p.buyRate, 0)) + "</td>" : '<td class="r faint">—</td>') +
       (p ? '<td class="r mono">−' + M(inr(p.freight)) + "</td>" : '<td class="r faint">—</td>') +
       (p ? '<td class="r mono">−' + M(inr(p.ded)) + "</td>" : '<td class="r faint">—</td>') +
       (p ? '<td class="r mono">−' + M(inr(p.interest)) + "</td>" : '<td class="r faint">—</td>') +
+      (bk ? '<td class="r mono faint">' + M(inr(bk.pl)) + "</td>" : '<td class="r faint">—</td>') +
       (p ? '<td class="r mono" style="font-weight:700;color:' + (p.pl >= 0 ? "var(--good)" : "var(--bad)") + '">' + M(inr(p.pl)) + "</td>" : '<td class="r faint">Unmatched</td>') +
       '<td class="r">' + statusPill + "</td></tr>";
   }).join("");
-  return '<table class="tbl"><thead><tr><th>Trip</th><th>Vehicle</th><th>Route</th><th>Sauda</th><th class="r">Qty</th><th class="r">Purchase rate</th><th class="r">Freight</th><th class="r">Deduction</th><th class="r">Interest</th><th class="r">Booked P/L</th><th class="r">Status</th></tr></thead><tbody>' + rows + "</tbody></table>";
+  return '<table class="tbl tbl-tight"><thead><tr><th>Trip</th><th>Vehicle</th><th>Route</th><th>Sauda</th><th class="r">Qty</th><th class="r">Shortage</th><th class="r">Purchase rate</th><th class="r">Freight</th><th class="r">Deduction</th><th class="r">Interest</th><th class="r">Booked P/L</th><th class="r">Actual P/L</th><th class="r">Status</th></tr></thead><tbody>' + rows + "</tbody></table>";
 }
 function vTrips(id) {
   const t = S.trips.find(x => x.id === id); if (t) return vTripDetail(t);
@@ -1443,34 +1522,65 @@ function vTrips(id) {
   const list = S.trips.filter(F[f]);
   const money = canMoney();
   const totalPL = money ? list.reduce((a, x) => { const p = perDeliveryPL(x); return a + (p ? p.pl : 0); }, 0) : 0;
-  return head("Delivery register", money ? "Every truck from mine weighbridge to plant weighbridge — booked P&L per delivery, net of freight, deduction and finance cost." : "Every truck from mine weighbridge to plant weighbridge. Showing today’s sample trips.", '<a class="btn p" href="#/field" data-act="persona" data-p="mine">Create trip on phone</a>') +
+  const totalBooked = money ? list.reduce((a, x) => { const p = perDeliveryPL(x); const bk = p && bookedDeliveryPL(x); return a + (bk ? bk.pl : 0); }, 0) : 0;
+  const totalShort = list.reduce((a, x) => a + shortTons(x), 0);
+  return head("Delivery register", money ? "Every truck from mine weighbridge to plant weighbridge — booked vs actual P&L per delivery, net of freight, deduction, finance cost and shortage." : "Every truck from mine weighbridge to plant weighbridge. Showing today’s sample trips.", '<a class="btn p" href="#/field" data-act="persona" data-p="mine">Create trip on phone</a>') +
     mtiles([
       { k: "In transit", v: S.trips.filter(F.in_transit).length, color: "var(--accent2)" },
       { k: "Needs attention", v: S.trips.filter(F.attention).length, color: "var(--bad)", vcolor: S.trips.filter(F.attention).length ? "var(--bad)" : undefined },
       { k: "Received", v: S.trips.filter(F.received).length, color: "var(--good)" }
-    ].concat(money ? [{ k: "Booked P&L, this filter", v: inr(totalPL), color: totalPL >= 0 ? "var(--good)" : "var(--bad)", vcolor: totalPL >= 0 ? "var(--good)" : "var(--bad)" }] : [])) +
+    ].concat(money ? [
+      { k: "Booked P&L, this filter", v: inr(totalBooked), color: "var(--ink3)" },
+      { k: "Actual P&L, this filter", v: inr(totalPL), s: (totalPL - totalBooked) >= 0 ? "" : short(totalBooked - totalPL) + " behind booked", color: totalPL >= 0 ? "var(--good)" : "var(--bad)", vcolor: totalPL >= 0 ? "var(--good)" : "var(--bad)" },
+      { k: "Shortage, this filter", v: num(totalShort, 2) + " t", color: totalShort ? "var(--bad)" : "var(--good)", vcolor: totalShort ? "var(--bad)" : undefined }
+    ] : [])) +
     '<div class="chips">' + [["all", "All"], ["in_transit", "In transit"], ["attention", "Needs attention"], ["received", "Received"]].map(k => '<button class="chip ' + (f === k[0] ? "on" : "") + '" data-act="tfilter" data-k="' + k[0] + '">' + k[1] + " · " + S.trips.filter(F[k[0]]).length + "</button>").join("") + "</div>" +
     '<section class="card"><div class="scroll">' + (money ? deliveryRegisterTable(list) : tripTable(list)) + "</div></section>";
+}
+function tripResTrail(t) {
+  const log = (t.resLog || []);
+  if (!log.length) return '<p class="muted" style="margin:6px 0 0">No interventions logged yet — nothing has needed one.</p>';
+  return '<ul class="munim-list" style="margin-top:6px">' + log.map(l => '<li><div>' + l.text + '</div><div class="faint">' + l.by + " · " + l.at + '</div></li>').join("") + "</ul>";
 }
 function vTripDetail(t) {
   const s = sauda(t.sauda), sp = shortPct(t), f = tripFlag(t);
   const res = t.a ? settle(s.sched, t.a, t.plantNet || t.mineNet, s.rate) : null;
   const st = t.status; const reached = {loading: 1, in_transit: 2, received: 6, settled: 7}[st] || 1;
+  const m0 = orderMatches(s)[0], buy = m0 && po(m0.id);
+  const sr = buy ? shortResImpact(t, buy.rate) : null;
+  const rejectedLike = (res && res.rejected) || (f && (f.k === "Rejected" || f.k === "Rejection risk"));
   const steps = [
     ["Loaded at mine", PARTY[t.mine].name + " · " + t.loaded + " · net " + num(t.mineNet) + " t (gross/tare from weighbridge slip)"],
     ["Transit pass & e-way bill checked", "TP " + t.tp + " · EWB " + t.ewb + " · both valid"],
     ["In transit", st === "in_transit" ? "Last location shared by driver " + (t.hrs > 8 ? "5 h ago near Harichandanpur" : "40 min ago on NH-20") : "Reached plant"],
     ["Arrived at plant", pn(t.plant)],
-    ["Plant weighment", t.plantNet ? "Net " + num(t.plantNet) + " t · shortage " + sp.toFixed(2) + "%" : "Pending"],
+    ["Plant weighment", t.plantNet ? "Net " + num(t.plantNet) + " t · shortage " + num(shortTons(t), 2) + " t · " + sp.toFixed(2) + "%" : "Pending"],
     ["Plant assay", t.a ? Object.keys(t.a).map(k => ({fe: "Fe", sio2: "SiO₂", al2o3: "Al₂O₃", moist: "Moisture", under: "Undersize"})[k] + " " + t.a[k] + "%").join(" · ") : "Pending"],
     ["Settlement", st === "settled" ? "Agreed with plant" : res ? "Calculated — awaiting plant debit note" : "Pending"]
   ];
   const pl = canMoney() ? perDeliveryPL(t) : null;
+  const bk = canMoney() ? bookedDeliveryPL(t) : null;
+  const issueButtons = [];
+  if (sr && sr.total) {
+    issueButtons.push('<div style="margin-bottom:10px"><div><b>Quantity shortage</b> — ' + num(sr.total, 2) + " t short (" + sp.toFixed(2) + "%), " + inr(sr.fullLoss) + ' at mine rate.</div>' +
+      (sr.resolved ? '<div class="faint" style="margin:4px 0">Allocated: ' + ["seller", "transporter", "us"].filter(p => sr[p]).map(p => ({seller: "seller", transporter: "transporter", us: "us"}[p]) + " " + inr(sr[p])).join(", ") + (sr.fullyAllocated ? " — fully allocated." : " — " + num(Math.max(0, sr.total - sr.allocTons), 2) + " t still unallocated.") + '</div>' : "") +
+      '<button class="btn s" data-act="resolveshort" data-id="' + t.id + '">' + (sr.resolved ? "Revise allocation" : "Resolve shortage") + "</button></div>");
+  }
+  if (rejectedLike && !t.rerouted && !t.qualityAck) {
+    issueButtons.push('<div style="margin-bottom:10px"><div><b>Quality issue</b> — ' + (t.a ? "Fe " + t.a.fe + "% " : "") + "assay fell outside " + s.id + "’s terms" + (res && res.rejected ? " — rejected under the contract" : "") + '.</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">' +
+      '<button class="btn s" data-act="qualityaccept" data-id="' + t.id + '">Accept &amp; settle at contract terms</button>' +
+      '<button class="btn s" data-act="qualitydispute" data-id="' + t.id + '">Dispute — request umpire re-test</button>' +
+      '<button class="btn s" data-act="qualityreroute" data-id="' + t.id + '">Reroute to another buyer</button></div></div>');
+  } else if (t.qualityDispute === "pending") {
+    issueButtons.push('<div style="margin-bottom:10px"><span class="pill w">Umpire re-test requested</span></div>');
+  }
+  const docThumb = (label, doc) => '<div class="docthumb click" data-act="viewdoc" data-id="' + t.id + '" data-doc="' + doc + '" style="cursor:pointer">' + label + "</div>";
   return '<a href="#/trips" style="font-size:13px">‹ Delivery register</a>' + head(t.id + " · " + t.veh, PARTY[t.mine].name + " → " + pn(t.plant) + " · " + pn(t.tr) + " · sauda " + t.sauda, f ? '<span class="pill ' + f.c + '">' + f.k + " · " + f.why + "</span>" : "") +
     '<div class="row"><section class="card c5"><h2>Custody trail</h2><div class="timeline">' + steps.map((x, i) => '<div class="tl ' + (i < reached ? "done" : i === reached ? "now" : "") + '"><span class="o">' + (i < reached ? '<span style="color:var(--card)">' + ic("check", 12) + "</span>" : "") + '</span><div><div class="tt">' + x[0] + '</div><div class="td">' + x[1] + "</div></div></div>").join("") + "</div></section>" +
-    '<section class="card c7"><h2>Evidence</h2><div style="display:flex;gap:10px;flex-wrap:wrap"><div class="docthumb">Transit pass</div><div class="docthumb">Mine slip</div><div class="docthumb">Loading photo</div>' + (t.plantNet ? '<div class="docthumb">Plant slip</div>' : "") + (t.a ? '<div class="docthumb">Lab report</div>' : "") + '</div><div class="faint">Every photo carries GPS and time stamps. Every edit is logged.</div>' +
+    '<section class="card c7"><h2>Evidence</h2><div style="display:flex;gap:10px;flex-wrap:wrap">' + docThumb("Transit pass", "transit") + docThumb("Mine slip", "weigh") + docThumb("Loading photo", "photo") + (t.plantNet ? docThumb("Plant slip", "weigh") : "") + (t.a ? docThumb("Lab report", "assay") : "") + '</div><div class="faint">Click any slip to compare both sides. Every photo carries GPS and time stamps — every edit is logged.</div>' +
     (res ? '<h2 style="margin-top:10px">Truck settlement on ' + s.id + " terms</h2>" + settleTable(res) : '<p class="muted">Settlement appears here as soon as the plant assay is recorded.</p>') + "</section></div>" +
-    (canMoney() ? '<section class="card" style="margin-top:16px"><h2>Booked P&amp;L for this delivery</h2>' + (pl ? '<table class="tbl"><tbody><tr><td>Revenue (' + num(pl.qty) + " t × ₹" + num(s.rate, 0) + '/t)</td><td class="r mono">' + inr(pl.revenue) + '</td></tr><tr><td>Purchase (' + orderMatches(s).map(m => m.id).join(", ") + " @ ₹" + num(pl.buyRate, 0) + '/t)</td><td class="r mono">−' + inr(pl.cost) + '</td></tr><tr><td>Freight</td><td class="r mono">−' + inr(pl.freight) + '</td></tr><tr><td>Deduction' + (t.a ? "" : ' <span class="faint">(estimate — assay pending)</span>') + '</td><td class="r mono">−' + inr(pl.ded) + '</td></tr><tr><td>Finance cost <span class="faint">(12% p.a.)</span></td><td class="r mono">−' + inr(pl.interest) + '</td></tr><tr><td style="font-weight:600">Booked P&amp;L</td><td class="r mono" style="font-weight:600;color:' + (pl.pl >= 0 ? "var(--good)" : "var(--bad)") + '">' + inr(pl.pl) + " · ₹" + num(pl.perT, 0) + "/t</td></tr></tbody></table>" : '<p class="muted">This trip’s sauda isn’t matched to a purchase order yet, so no delivery-level P&amp;L can be booked.</p>') + "</section>" : "") +
+    ((issueButtons.length || (t.resLog && t.resLog.length)) ? '<section class="card" style="margin-top:16px"><h2>Issues &amp; resolution</h2>' + issueButtons.join("") + (t.rerouted ? '<div class="warn-banner">' + t.rerouted.note + '</div>' : "") + '<h3 style="margin:10px 0 0;font-size:13px;color:var(--ink2)">Resolution trail</h3>' + tripResTrail(t) + "</section>" : "") +
+    (canMoney() ? '<section class="card" style="margin-top:16px"><h2>Booked vs actual P&amp;L for this delivery</h2>' + (pl ? '<table class="tbl"><tbody><tr><td>Revenue (' + num(pl.qty) + " t × ₹" + num(s.rate, 0) + '/t)</td><td class="r mono">' + inr(pl.revenue) + '</td></tr><tr><td>Purchase (' + orderMatches(s).map(m => m.id).join(", ") + " @ ₹" + num(pl.buyRate, 0) + "/t on " + num(t.mineNet) + ' t mine-billed qty)</td><td class="r mono">−' + inr(pl.cost) + (sr && sr.recovered ? '<div class="faint">net of ' + inr(sr.recovered) + " shortage recovered</div>" : "") + '</td></tr><tr><td>Freight</td><td class="r mono">−' + inr(pl.freight) + '</td></tr><tr><td>Deduction' + (t.a ? "" : ' <span class="faint">(estimate — assay pending)</span>') + '</td><td class="r mono">−' + inr(pl.ded) + '</td></tr><tr><td>Finance cost <span class="faint">(12% p.a.)</span></td><td class="r mono">−' + inr(pl.interest) + '</td></tr><tr><td style="font-weight:600">Booked P&amp;L <span class="faint">(order terms, this truck’s mine qty)</span></td><td class="r mono" style="font-weight:600;color:var(--ink3)">' + (bk ? inr(bk.pl) + " · ₹" + num(bk.perT, 0) + "/t" : "—") + '</td></tr><tr><td style="font-weight:700">Actual P&amp;L</td><td class="r mono" style="font-weight:700;color:' + (pl.pl >= 0 ? "var(--good)" : "var(--bad)") + '">' + inr(pl.pl) + " · ₹" + num(pl.perT, 0) + "/t</td></tr></tbody></table>" : '<p class="muted">This trip’s sauda isn’t matched to a purchase order yet, so no delivery-level P&amp;L can be booked.</p>') + "</section>" : "") +
     '<section class="card" style="margin-top:16px"><h2>Team notes</h2>' + byLine(t, "loggedBy", "Logged by") + commentThread(t.id) + "</section>";
 }
 function settleTable(r) {
@@ -1548,10 +1658,69 @@ function exportLocations(c) {
   const ms = exportMoves(c);
   return LOC_BUCKET.map(([label, test]) => ({label, qty: ms.filter(test).reduce((a, m) => a + m.qty, 0)})).filter(b => b.qty > 0);
 }
+/* ---------- export Fe% by source (item 7) ----------
+   Export contracts are booked on a committed Fe% (parsed out of the product label, e.g. "Fines 56.5% Fe"), same
+   idea as feCommitment() for sale orders — but here the "delivery" is sourcing material into the port/warehouse
+   from several mines, each at its own assay, so the desk needs both a mine-by-mine breakdown and the blended
+   average so far, plus what Fe% the still-unsourced tonnage needs to average to still land on the committed spec. */
+const exportFeSpec = o => { const m = /([\d.]+)\s*%/.exec(o.product); return m ? +m[1] : null; };
+/* only first-leg, mine-origin movements carry a fresh assay and count as "sourced" — onward relocations between
+   warehouse/port/vessel are the same tonnage moving again and must not be double-counted here. */
+const exportSourceLegs = c => exportMoves(c).filter(m => PARTY[m.from] && PARTY[m.from].type === "Mine" && m.fe != null);
+function exportSourceMix(c) {
+  const legs = exportSourceLegs(c);
+  const byMine = {};
+  legs.forEach(m => { (byMine[m.from] = byMine[m.from] || []).push(m); });
+  const rows = Object.keys(byMine).map(mine => {
+    const ms = byMine[mine], qty = ms.reduce((a, m) => a + m.qty, 0), feSum = ms.reduce((a, m) => a + m.qty * m.fe, 0);
+    return {mine, qty, avgFe: qty ? feSum / qty : null};
+  });
+  const qty = legs.reduce((a, m) => a + m.qty, 0), feSum = legs.reduce((a, m) => a + m.qty * m.fe, 0);
+  return {rows: rows.sort((a, b) => b.qty - a.qty), qty, avgFe: qty ? feSum / qty : null, feSum};
+}
+function exportFeCommitment(o) {
+  const basis = exportFeSpec(o);
+  if (basis == null) return null;
+  const mix = exportSourceMix(o.id);
+  const balQty = Math.max(0, o.qty - mix.qty);
+  const reqAvg = balQty ? (basis * o.qty - mix.feSum) / balQty : null;
+  return {basis, mix, balQty, reqAvg, gap: reqAvg != null ? reqAvg - basis : 0};
+}
+function exportFeCard(o) {
+  const fc = exportFeCommitment(o);
+  if (!fc) return "";
+  const feColor = fc.gap > 0.3 ? "var(--bad)" : fc.gap > 0 ? "var(--warn)" : "var(--good)";
+  const rows = fc.mix.rows.map(r => '<tr><td style="font-weight:600">' + pn(r.mine) + '</td><td class="r mono">' + num(r.qty, 0) + ' t</td><td class="r mono">' + (r.avgFe != null ? r.avgFe.toFixed(2) + "%" : "—") + "</td></tr>").join("");
+  return '<div class="chead" style="margin-top:12px"><h2>Fe% sourced, by mine</h2><span class="faint">Committed basis ' + fc.basis + '% Fe · weighted by tonnage booked in at each mine</span></div>' +
+    '<div class="scroll"><table class="tbl"><thead><tr><th>Source mine</th><th class="r">Sourced</th><th class="r">Avg Fe</th></tr></thead><tbody>' +
+    (rows || '<tr><td colspan="3" class="faint">No assayed lots booked in yet</td></tr>') +
+    '<tr style="font-weight:600;border-top:2px solid var(--line)"><td>Overall, all sources</td><td class="r mono">' + num(fc.mix.qty, 0) + ' t</td><td class="r mono">' + (fc.mix.avgFe != null ? fc.mix.avgFe.toFixed(2) + "%" : "—") + "</td></tr>" +
+    "</tbody></table></div>" +
+    '<div class="stats" style="margin-top:8px"><div class="stat"><span class="k">Still to source</span><span class="v">' + num(fc.balQty, 0) + ' t</span></div><div class="stat"><span class="k">Required avg Fe on balance</span><span class="v" style="color:' + feColor + '">' + (fc.reqAvg != null ? fc.reqAvg.toFixed(2) + "%" : "—") + '</span></div></div>' +
+    (fc.mix.qty && fc.gap > 0.3 ? '<div class="warn-banner">Blended Fe so far is ' + Math.abs(fc.mix.avgFe - fc.basis).toFixed(2) + '% below the ' + fc.basis + '% commitment — the remaining ' + num(fc.balQty, 0) + ' t needs to average ' + fc.reqAvg.toFixed(2) + '% Fe to still land on spec, or the shipment risks a quality claim from the buyer.</div>' : fc.mix.qty ? '<div class="ok-banner">' + ic("check") + "On track to meet the " + fc.basis + '% Fe commitment' + (fc.reqAvg != null ? " — balance only needs " + fc.reqAvg.toFixed(2) + "% Fe." : ".") + "</div>" : "");
+}
+/* company-wide roll-up across every export contract — which mines the export book is actually running on and the
+   blended Fe% each is delivering, regardless of which contract's commitment it happens to count against. */
+function exportFeAllCard() {
+  const legs = exportOrders().reduce((a, o) => a.concat(exportSourceLegs(o.id)), []);
+  if (!legs.length) return "";
+  const byMine = {};
+  legs.forEach(m => { (byMine[m.from] = byMine[m.from] || []).push(m); });
+  const rows = Object.keys(byMine).map(mine => {
+    const ms = byMine[mine], qty = ms.reduce((a, m) => a + m.qty, 0), feSum = ms.reduce((a, m) => a + m.qty * m.fe, 0);
+    return {mine, qty, avgFe: qty ? feSum / qty : null};
+  }).sort((a, b) => b.qty - a.qty);
+  const qty = legs.reduce((a, m) => a + m.qty, 0), feSum = legs.reduce((a, m) => a + m.qty * m.fe, 0);
+  return '<section class="card"><div class="chead"><h2>Fe% sourced so far, across all export contracts</h2><span class="muted">Every mine currently feeding the export book, blended across contracts</span></div>' +
+    '<div class="scroll"><table class="tbl"><thead><tr><th>Source mine</th><th class="r">Sourced</th><th class="r">Avg Fe</th></tr></thead><tbody>' +
+    rows.map(r => '<tr><td style="font-weight:600">' + pn(r.mine) + '</td><td class="r mono">' + num(r.qty, 0) + ' t</td><td class="r mono">' + (r.avgFe != null ? r.avgFe.toFixed(2) + "%" : "—") + "</td></tr>").join("") +
+    '<tr style="font-weight:600;border-top:2px solid var(--line)"><td>Overall, all mines &amp; contracts</td><td class="r mono">' + num(qty, 0) + ' t</td><td class="r mono">' + (qty ? (feSum / qty).toFixed(2) + "%" : "—") + "</td></tr>" +
+    "</tbody></table></div></section>";
+}
 function vExportOrders() {
   const list = exportOrders();
   if (!list.length) return '<p class="muted">No export saudas yet.</p>';
-  return list.map(o => {
+  return exportFeAllCard() + list.map(o => {
     const procured = exportProcured(o.id), target = o.qty, open = Math.max(0, target - procured);
     const locs = exportLocations(o.id);
     const moves = exportMoves(o.id).slice().sort((a, b) => D(b.date) - D(a.date));
@@ -1563,6 +1732,7 @@ function vExportOrders() {
       '<div class="row" style="margin-top:12px"><section class="card c6" style="box-shadow:none;padding:0"><h2>Where the material is lying</h2>' +
       (locs.length ? '<table class="tbl"><tbody>' + locs.map(l => '<tr><td>' + l.label + '</td><td class="r mono">' + num(l.qty, 0) + ' t</td></tr>').join("") + (open ? '<tr><td class="faint">Not yet procured</td><td class="r mono faint">' + num(open, 0) + ' t</td></tr>' : "") + '</tbody></table>' : '<p class="muted">Nothing procured yet.</p>') + "</section>" +
       '<section class="card c6" style="box-shadow:none;padding:0"><h2>Planned vessel</h2>' + (vessel ? '<table class="tbl"><tbody><tr><td>Vessel</td><td>' + vessel.vessel + '</td></tr><tr><td>Laycan</td><td>' + vessel.laycan + '</td></tr><tr><td>ETA ' + vessel.port + '</td><td>' + fdate(vessel.eta) + '</td></tr><tr><td>Discharge</td><td>' + vessel.discharge + '</td></tr></tbody></table><a class="btn" style="margin-top:8px" href="#/export/lc" data-act="golc">Open LC &amp; documents</a>' : '<p class="muted">No vessel nominated yet.</p>') + "</section></div>" +
+      exportFeCard(o) +
       '<div class="chead" style="margin-top:12px"><h2>Movement log</h2><span class="faint">Mine → warehouse/port → vessel</span></div><div class="scroll"><table class="tbl"><thead><tr><th>Date</th><th class="r">Qty</th><th>From</th><th>To</th><th>Mode</th><th>Note</th></tr></thead><tbody>' +
       (moves.length ? moves.map(m => '<tr><td class="mono">' + fdate(m.date) + '</td><td class="r mono">' + num(m.qty, 0) + ' t</td><td>' + (PARTY[m.from] ? pn(m.from) + " mine" : m.from) + '</td><td>' + m.to + '</td><td>' + m.mode + '</td><td class="faint">' + (m.note || "—") + "</td></tr>").join("") : '<tr><td colspan="6" class="faint">No movements logged yet</td></tr>') + "</tbody></table></div></section>";
   }).join("");
@@ -1918,8 +2088,11 @@ const ACT = {
   impi3ms: ds => {
     const p = po(ds.id); if (!p) return;
     const link = orderMatches(p)[0];
+    const pm = permitsFor(p.id).find(x => !permitBlocker(x)) || permitsFor(p.id)[0];
+    const bal = pm ? permitBalance(pm) : null;
     modal('<h3>Paste i3MS dispatch report — ' + p.id + '</h3><p class="muted" style="margin:0 0 8px">Matches i3MS → Reports → Permit Wise Report. One truck per line: Pass Number, Pass Date, Truck Number, Mineral Quantity (tab- or comma-separated) — paste straight from the portal’s Excel export.</p>' +
       (!link ? '<div class="warn-banner">Link a sale order to ' + p.id + ' first — imported trucks need a buyer to deliver against.</div>' : "") +
+      (pm ? '<div class="faint" style="margin:0 0 8px">Will be tied to lift ' + pm.id + ' (Form L ' + pm.formL.no + ') — ' + num(bal, 0) + ' t of its ' + num(pm.formL.qty, 0) + ' t still open.</div>' : '<div class="warn-banner">No Form L lift found for ' + p.id + ' yet — import will leave these trucks without a permit reference.</div>') +
       '<textarea id="i3ms_paste" class="inp" rows="6">OD/TP/26/77650\t2026-09-20\tOD09 ZT 9981\t28.4\nOD/TP/26/77651\t2026-09-20\tOD14 KJ 2210\t27.9\nOD/TP/26/77652\t2026-09-21\tOD09 AK 5567\t29.1</textarea>' +
       '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button class="btn" data-act="x">Cancel</button><button class="btn p" data-act="impi3msdo" data-id="' + p.id + '">Import rows</button></div>');
   },
@@ -1931,6 +2104,7 @@ const ACT = {
     const ta = document.getElementById("i3ms_paste");
     const lines = (ta ? ta.value : "").split("\n").map(l => l.trim()).filter(Boolean);
     const pm = permitsFor(p.id).find(x => !permitBlocker(x)) || permitsFor(p.id)[0];
+    const balBefore = pm ? permitBalance(pm) : null;
     let n = 0, qty = 0;
     lines.forEach(line => {
       const parts = line.split(/\t|,\s*/).map(x => x.trim());
@@ -1941,7 +2115,93 @@ const ACT = {
       S.trips.unshift({id: "T-IMP-" + (S.trips.length + 1), veh: truck, sauda: s.id, mine: p.party, plant: s.party, tr: "T1", tp: passNo, ewb: "", mineNet: quantity, loaded: passDate, status: "in_transit", hrs: 0.1, permit: pm ? pm.id : undefined, isNew: true, src: "i3MS import"});
     });
     closeModal(); render();
-    toast(n ? "Imported " + n + " truck(s) from i3MS — " + num(qty, 0) + " t added to " + s.id : "No valid rows found — check the paste format");
+    toast(n ? "Imported " + n + " truck(s) from i3MS — " + num(qty, 0) + " t added to " + s.id + (pm && balBefore != null && qty > balBefore ? " — exceeds " + pm.id + "’s open Form L balance by " + num(qty - balBefore, 0) + " t, check with the mine" : "") : "No valid rows found — check the paste format");
+  },
+  /* shortage resolution (item 1): split the mine-vs-plant weighbridge gap across seller / transporter / us,
+     each as a tonnage share (valued at the mine rate) or a flat lumpsum, any combination at once. */
+  resolveshort: ds => {
+    const t = S.trips.find(x => x.id === ds.id); if (!t) return;
+    const s = so(t.sauda), m = orderMatches(s)[0], buy = m && po(m.id);
+    if (!buy) { toast("No matched purchase order to resolve this shortage against"); return; }
+    const sr = shortResImpact(t, buy.rate);
+    const ex = p => shortResEntries(t).find(e => e.party === p && e.mode === "perTon");
+    const exL = p => shortResEntries(t).find(e => e.party === p && e.mode === "lumpsum");
+    const row = (p, label, hint) => '<tr><td style="font-weight:600">' + label + '<div class="faint" style="font-weight:400">' + hint + '</div></td><td><input class="inp mono" style="width:90px" type="number" step="0.01" id="sr_' + p + '_t" placeholder="tonnes" value="' + (ex(p) ? ex(p).qty : "") + '"></td><td><input class="inp mono" style="width:120px" type="number" id="sr_' + p + '_a" placeholder="₹ lumpsum" value="' + (exL(p) ? exL(p).amount : "") + '"></td></tr>';
+    modal('<h3>Resolve shortage — ' + t.id + '</h3><p class="muted" style="margin:0 0 10px">Loaded ' + num(t.mineNet) + ' t at ' + PARTY[t.mine].name + ', plant received ' + (t.plantNet ? num(t.plantNet) + " t" : "—") + ' — short ' + num(sr.total, 2) + ' t (' + shortPct(t).toFixed(2) + '%), ' + inr(sr.fullLoss) + ' at ₹' + num(buy.rate, 0) + '/t mine rate. Split it across one, two or all three outcomes below — tonnes for a per-tonne share, or a flat lumpsum. Leave a row blank if it doesn’t apply.</p>' +
+      '<table class="tbl"><thead><tr><th></th><th>Tonnes</th><th>or Lumpsum ₹</th></tr></thead><tbody>' +
+      row("seller", "Accepted by seller", "Mine accepts the shortfall — reduces our cost") +
+      row("transporter", "Deducted from transporter", "Recovered as a claim against " + pn(t.tr)) +
+      row("us", "Borne by us", "Logged as our loss, no recovery") +
+      '</tbody></table>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button class="btn" data-act="x">Cancel</button><button class="btn p" data-act="resolveshortdo" data-id="' + t.id + '">Save allocation</button></div>');
+  },
+  resolveshortdo: ds => {
+    const t = S.trips.find(x => x.id === ds.id); if (!t) return;
+    const s = so(t.sauda), m = orderMatches(s)[0], buy = m && po(m.id);
+    const entries = [];
+    ["seller", "transporter", "us"].forEach(p => {
+      const tv = document.getElementById("sr_" + p + "_t"), av = document.getElementById("sr_" + p + "_a");
+      if (tv && tv.value !== "" && +tv.value > 0) entries.push({party: p, mode: "perTon", qty: +tv.value});
+      if (av && av.value !== "" && +av.value > 0) entries.push({party: p, mode: "lumpsum", amount: +av.value});
+    });
+    if (!entries.length) { toast("Enter at least one allocation"); return; }
+    t.shortRes = {entries, by: S.currentUser, at: "just now"};
+    const sr = shortResImpact(t, buy.rate);
+    (t.resLog = t.resLog || []).unshift({by: S.currentUser, at: "just now", text: "Shortage of " + num(sr.total, 2) + " t allocated — " + entries.map(e => ({seller: "seller", transporter: "transporter", us: "us"}[e.party]) + " " + (e.mode === "lumpsum" ? inr(e.amount) : num(e.qty, 2) + " t")).join(", ") + (sr.fullyAllocated ? " — fully allocated." : " — " + num(Math.max(0, sr.total - sr.allocTons), 2) + " t still unallocated, treated as our loss until resolved.")});
+    closeModal(); render();
+    toast("Shortage allocation saved for " + t.id);
+  },
+  /* quality issue interventions (item 3) */
+  qualityaccept: ds => {
+    const t = S.trips.find(x => x.id === ds.id); if (!t) return;
+    const s = so(t.sauda);
+    const res = t.a ? settle(s.sched, t.a, t.plantNet || t.mineNet, s.rate) : null;
+    t.qualityAck = true;
+    (t.resLog = t.resLog || []).unshift({by: S.currentUser, at: "just now", text: "Accepted plant’s assay — settled at contract terms" + (res ? ", deduction " + inr(res.ded) : "") + "."});
+    render(); toast("Quality issue on " + t.id + " accepted — settled at contract terms");
+  },
+  qualitydispute: ds => {
+    const t = S.trips.find(x => x.id === ds.id); if (!t) return;
+    t.qualityDispute = "pending";
+    (t.resLog = t.resLog || []).unshift({by: S.currentUser, at: "just now", text: "Disputed the plant’s assay — requested an umpire re-test."});
+    render(); toast("Umpire re-test requested for " + t.id);
+  },
+  qualityreroute: ds => {
+    const t = S.trips.find(x => x.id === ds.id); if (!t) return;
+    const s = so(t.sauda);
+    const plants = Object.keys(PARTY).filter(k => /plant/i.test(PARTY[k].type || "") && k !== s.party);
+    modal('<h3>Reroute ' + t.id + ' to another buyer</h3><p class="muted" style="margin:0 0 10px">Fe ' + (t.a ? t.a.fe : "—") + '% fell short of ' + pn(s.party) + '’s terms. Pick another buyer and the rate agreed with them instead.</p>' +
+      '<label class="faint" for="rr_to">New buyer</label><select class="sel" id="rr_to">' + plants.map(k => '<option value="' + k + '">' + pn(k) + '</option>').join('') + '</select>' +
+      '<label class="faint" for="rr_rate" style="margin-top:8px;display:block">Agreed rate (₹/t)</label><input class="inp mono" id="rr_rate" type="number" value="' + Math.round(s.rate * 0.97) + '">' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button class="btn" data-act="x">Cancel</button><button class="btn p" data-act="qualityrerouteDo" data-id="' + t.id + '">Confirm reroute</button></div>');
+  },
+  qualityrerouteDo: ds => {
+    const t = S.trips.find(x => x.id === ds.id); if (!t) return;
+    const to = document.getElementById("rr_to").value, rate = +document.getElementById("rr_rate").value;
+    t.rerouted = {to, rate, note: "Fe " + (t.a ? t.a.fe : "—") + "% fell short of the original buyer’s terms — re-sold to " + pn(to) + " at ₹" + num(rate, 0) + "/t instead of a write-off."};
+    (t.resLog = t.resLog || []).unshift({by: S.currentUser, at: "just now", text: "Rerouted to " + pn(to) + " at ₹" + num(rate, 0) + "/t instead of a full write-off."});
+    closeModal(); render(); toast(t.id + " rerouted to " + pn(to));
+  },
+  /* evidence viewer (item 3): compare both sides' weighment and assay docs side by side */
+  viewdoc: ds => {
+    const t = S.trips.find(x => x.id === ds.id); if (!t) return;
+    const doc = ds.doc;
+    let body;
+    if (doc === "weigh") {
+      const sp = shortPct(t);
+      body = '<table class="tbl"><tbody><tr><td>Mine weighbridge (' + PARTY[t.mine].name + ')</td><td class="r mono">' + num(t.mineNet) + ' t</td></tr><tr><td>Plant weighbridge (' + pn(t.plant) + ')</td><td class="r mono">' + (t.plantNet ? num(t.plantNet) + " t" : "pending") + '</td></tr><tr><td style="font-weight:600">Deviance</td><td class="r mono" style="font-weight:600;color:' + (sp > 0.75 ? "var(--bad)" : "inherit") + '">' + (sp != null ? num(shortTons(t), 2) + " t · " + sp.toFixed(2) + "%" : "—") + '</td></tr></tbody></table>' + '<p class="faint" style="margin-top:8px">Both slips carry the truck’s gross/tare readings, time-stamped at capture.</p>';
+    } else if (doc === "assay") {
+      const pm = t.permit && S.permits.find(x => x.id === t.permit);
+      const govtFe = pm && pm.formK && pm.formK.fe;
+      const plantFe = t.a && t.a.fe;
+      const variance = (plantFe != null && govtFe != null) ? r4(plantFe - govtFe) : null;
+      body = (t.a ? '<table class="tbl"><thead><tr><th>Parameter</th><th class="r">Plant lab</th>' + (govtFe != null ? '<th class="r">Form K govt lab</th>' : '') + '</tr></thead><tbody>' + Object.keys(t.a).map(k => '<tr><td>' + ({fe: "Fe", sio2: "SiO₂", al2o3: "Al₂O₃", moist: "Moisture", under: "Undersize"}[k] || k) + '</td><td class="r mono">' + t.a[k] + '%</td>' + (govtFe != null ? '<td class="r mono">' + (k === "fe" ? govtFe + "%" : "—") + '</td>' : "") + '</tr>').join("") + '</tbody></table>' + (variance != null ? '<div class="faint" style="margin-top:8px' + (Math.abs(variance) >= 0.5 ? ';color:var(--bad)' : '') + '">Plant vs govt-lab Fe variance ' + fx(Math.abs(variance)) + '% — ' + (Math.abs(variance) >= 0.5 ? "crosses the usual umpire threshold, worth a joint re-sample." : "within normal tolerance.") + '</div>' : (pm ? '<div class="faint" style="margin-top:8px">Form K govt-lab certificate pending on ' + pm.id + ' — no independent check yet.</div>' : '')) : '<p class="muted">Plant assay pending.</p>');
+    } else if (doc === "transit") {
+      body = '<table class="tbl"><tbody><tr><td>Transit pass</td><td class="r mono">' + t.tp + '</td></tr><tr><td>E-way bill</td><td class="r mono">' + (t.ewb || "—") + '</td></tr><tr><td>Permit lift</td><td class="r">' + (t.permit || "—") + '</td></tr></tbody></table>';
+    } else {
+      body = '<p class="muted">Photo preview isn’t available in this prototype — on the real app it’s captured with a GPS tag and timestamp at the weighbridge.</p>';
+    }
+    modal('<h3>' + t.id + ' · ' + {weigh: "Weighment slips", assay: "Assay reports", transit: "Transit documents", photo: "Loading photo"}[doc] + '</h3>' + body + '<div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn" data-act="x">Close</button></div>');
   }
 };
 function ask(q) { q = String(q || "").trim(); if (!q) return; S.chat.push({u: q}); S.chat.push({a: answer(q)}); if (location.hash !== "#/ask") go("#/ask"); else render(); }
